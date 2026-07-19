@@ -678,16 +678,6 @@
 <body>
 
 
-            <!-- Login Screen -->
-<div id="loginScreen" style="position:fixed; inset:0; background:var(--bg); display:flex; align-items:center; justify-content:center; z-index:9999;">
-  <div style="background:var(--surface); padding:40px; border-radius:var(--radius); border:1px solid var(--border); width:90%; max-width:360px;">
-    <h2 style="text-align:center; margin-bottom:20px; color:#fff;">🔐 Login</h2>
-    <input type="email" id="loginEmail" class="form-input" placeholder="Email" style="margin-bottom:12px;" value="bg@gmail.com">
-    <input type="password" id="loginPassword" class="form-input" placeholder="Password" style="margin-bottom:12px;" value="123456">
-    <button id="loginBtn" class="btn btn-primary" style="width:100%;">Sign In</button>
-    <p id="loginError" style="color:var(--danger); margin-top:10px; display:none;">Invalid credentials</p>
-  </div>
-</div>
 
     <div class="particles" id="particles"></div>
     <div class="app-container">
@@ -700,6 +690,17 @@
             <p class="progress-label" id="progressLabel">0% complete</p>
             <div class="sync-status" id="syncStatus"><span class="dot online" id="syncDot"></span><span id="syncLabel">Synced</span></div>
         </div>
+                    <!-- Login Screen -->
+<div id="loginScreen" style="position:fixed; inset:0; background:var(--bg); display:flex; align-items:center; justify-content:center; z-index:9999;">
+  <div style="background:var(--surface); padding:40px; border-radius:var(--radius); border:1px solid var(--border); width:90%; max-width:360px;">
+    <h2 style="text-align:center; margin-bottom:20px; color:#fff;">🔐 Login</h2>
+    <input type="email" id="loginEmail" class="form-input" placeholder="Email" style="margin-bottom:12px;" value="bg@gmail.com">
+    <input type="password" id="loginPassword" class="form-input" placeholder="Password" style="margin-bottom:12px;" value="123456">
+    <button id="loginBtn" class="btn btn-primary" style="width:100%;">Sign In</button>
+    <p id="loginError" style="color:var(--danger); margin-top:10px; display:none;">Invalid credentials</p>
+  </div>
+</div>
+
         <div class="timeline-wrapper">
             <div class="timeline-line"></div>
             <div class="timeline-entries" id="timelineEntries"></div>
