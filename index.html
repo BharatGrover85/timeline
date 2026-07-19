@@ -726,6 +726,7 @@
     <div class="toast" id="toast"></div>
 
     <script type="module">
+        
         // ─── Firebase Imports ──────────────────────────────────────────────
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
@@ -738,6 +739,8 @@
             updateDoc
         } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+        
         const firebaseConfig = {
             apiKey: "AIzaSyDoZkKuglA__7f2RPEmZoi9bfc9Y_4x-dg",
             authDomain: "timeline-158f8.firebaseapp.com",
@@ -752,6 +755,7 @@
         const analytics = getAnalytics(app);
         const db = getFirestore(app);
         const DOC_PATH = "timelines/main";
+        const auth = getAuth();
 
         // ─── DOM refs ─────────────────────────────────────────────────────
         const heroTitle = document.getElementById('heroTitle'),
@@ -1371,11 +1375,25 @@
         createParticles();
 
         // load from Firestore, fallback to localStorage
-        await loadDataFromFirestore();
+        //await loadDataFromFirestore();
 
         // setup real-time listener
-        setupFirestoreListener();
+        //setupFirestoreListener();
 
+        // Wait for auth before touching Firestore
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    console.log("✅ Logged in as", user.uid);
+    loadDataFromFirestore();
+    setupFirestoreListener();
+  } else {
+    signInWithEmailAndPassword(auth, email, password)
+      .then(() => console.log("✅ Auto-login successful"))
+      .catch(err => console.error("Login error:", err));
+  }
+});
+
+        
         // start countdown ticker
         setInterval(updateAllCountdowns, 1000);
         updateAllCountdowns();
