@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goal Timeline – Track Your Journey</title>
+    <style>
+        :root {
+            --bg: #06060d; --surface: #111119; --surface2: #181825;
+            --border: #252535; --text: #e0e0e8; --text2: #a0a0b8;
+            --accent: #00c6a7; --accent2: #5b9cf5; --accent-glow: rgba(0, 198, 167, 0.3);
+            --danger: #f04770; --warning: #f5a623; --success: #2ecc71;
+            --font: 'Segoe UI', system-ui, sans-serif;
+            --mono: 'JetBrains Mono', monospace;
+            --radius: 16px; --radius-sm: 10px; --transition: 0.3s ease;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html { scroll-behavior:smooth; font-size:16px; }
+        body {
+            background:var(--bg); color:var(--text); font-family:var(--font);
+            min-height:100vh; overflow-x:hidden;
+            background-image: radial-gradient(ellipse at 20% 10%, rgba(0,198,167,0.04) 0%, transparent 60%),
+                            radial-gradient(ellipse at 80% 70%, rgba(91,156,245,0.04) 0%, transparent 60%);
+        }
+        .particles { position:fixed; inset:0; pointer-events:none; z-index:0; opacity:0.4; }
+        .particle { position:absolute; border-radius:50%; background:var(--accent); animation:floatUp linear infinite; }
+        @keyframes floatUp { 0%{ transform:translateY(100vh) scale(0); opacity:0; } 10%{ opacity:1; } 90%{ opacity:1; } 100%{ transform:translateY(-10vh) scale(1); opacity:0; } }
+        .app-container { position:relative; z-index:1; min-height:100vh; display:flex; flex-direction:column; }
+        .hero-section { text-align:center; padding:50px 24px 30px; }
+        .hero-badge { display:inline-block; padding:8px 18px; border-radius:50px; background:var(--surface2); border:1px solid var(--border); font-size:0.8rem; letter-spacing:0.06em; text-transform:uppercase; color:var(--accent); margin-bottom:20px; font-weight:600; }
+        .hero-title { font-size:clamp(2rem,5vw,3.2rem); font-weight:800; background:linear-gradient(135deg,#fff 0%,#c0c0d0 40%,var(--accent) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:8px; word-break:break-word; }
+        .hero-subtitle { font-size:1.05rem; color:var(--text2); max-width:550px; margin:0 auto 18px; }
+        .hero-countdown-wrap { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:16px; }
+        .countdown-box { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px 18px; min-width:70px; text-align:center; backdrop-filter:blur(10px); }
+        .countdown-box .num { font-family:var(--mono); font-size:2rem; font-weight:700; color:#fff; line-height:1; }
+        .countdown-box .lbl { font-size:0.7rem; text-transform:uppercase; color:var(--text2); margin-top:4px; }
+        .countdown-box.urgent { border-color:var(--danger); box-shadow:0 0 20px rgba(240,71,112,0.2); }
+        .countdown-box.urgent .num { color:var(--danger); }
+        .progress-bar-wrap { max-width:400px; margin:0 auto; height:6px; background:var(--surface2); border-radius:10px; overflow:hidden; }
+        .progress-bar-fill { height:100%; border-radius:10px; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width 0.6s; box-shadow:0 0 12px var(--accent-glow); }
+        .progress-label { font-size:0.8rem; color:var(--text2); margin-top:8px; }
+        .timeline-wrapper { flex:1; padding:10px 24px 60px; max-width:800px; margin:0 auto; width:100%; position:relative; }
+        .timeline-line { position:absolute; left:36px; top:0; bottom:0; width:3px; background:linear-gradient(to bottom, transparent 0%, var(--border) 5%, var(--accent) 50%, var(--border) 95%, transparent 100%); border-radius:10px; z-index:0; }
+        .timeline-entries { position:relative; z-index:1; display:flex; flex-direction:column; gap:28px; }
+        .timeline-entry { position:relative; margin-left:52px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px 60px 20px 22px; transition:var(--transition); backdrop-filter:blur(6px); min-height: 100px; }
+        .timeline-entry:hover { border-color:#3a3a52; box-shadow:0 8px 30px rgba(0,0,0,0.4); transform:translateY(-2px); }
+        .timeline-entry.completed { border-color:rgba(46,204,113,0.4); background:rgba(46,204,113,0.04); }
+        .timeline-entry.completed .entry-title { text-decoration:line-through; text-decoration-color:var(--success); }
+        .timeline-entry.overdue { border-color:rgba(240,71,112,0.5); box-shadow:0 0 20px rgba(240,71,112,0.1); }
+        .timeline-dot { position:absolute; left:-40px; top:28px; width:16px; height:16px; border-radius:50%; background:var(--surface); border:3px solid var(--accent); z-index:2; box-shadow:0 0 14px var(--accent-glow); }
+        .timeline-entry.completed .timeline-dot { background:var(--success); border-color:var(--success); box-shadow:0 0 18px rgba(46,204,113,0.5); }
+        .timeline-entry.overdue .timeline-dot { border-color:var(--danger); box-shadow:0 0 18px rgba(240,71,112,0.5); animation:pulse-dot 1.5s ease-in-out infinite; }
+        @keyframes pulse-dot { 0%,100%{ box-shadow:0 0 14px rgba(240,71,112,0.4); } 50%{ box-shadow:0 0 28px rgba(240,71,112,0.9); } }
+        .entry-header { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:6px; }
+        .entry-number { font-family:var(--mono); font-size:0.75rem; color:var(--accent); background:rgba(0,198,167,0.1); padding:4px 10px; border-radius:20px; font-weight:600; }
+        .entry-title { font-size:1.15rem; font-weight:700; color:#fff; }
+        .entry-desc { font-size:0.9rem; color:var(--text2); margin-bottom:10px; }
+        .entry-deadline { font-size:0.78rem; color:var(--text2); display:flex; align-items:center; gap:6px; margin-bottom:8px; }
+        .entry-deadline svg { width:14px; height:14px; opacity:0.7; }
+        .entry-countdown { display:flex; gap:6px; flex-wrap:wrap; }
+        .entry-countdown .mini-box { background:var(--surface2); border-radius:6px; padding:8px 10px; min-width:44px; text-align:center; border:1px solid var(--border); }
+        .entry-countdown .mini-num { font-family:var(--mono); font-size:1.1rem; font-weight:700; color:#fff; }
+        .entry-countdown .mini-lbl { font-size:0.6rem; color:var(--text2); text-transform:uppercase; }
+
+        /* Clickable status badge */
+        .entry-status {
+            display:inline-block; padding:5px 12px; border-radius:20px;
+            font-size:0.72rem; font-weight:600; margin-top:6px;
+            cursor:pointer; transition:var(--transition);
+            text-decoration: underline; text-underline-offset: 2px;
+            user-select: none;
+        }
+        .entry-status:hover { opacity:0.8; filter: brightness(1.2); }
+        .status-completed { background:rgba(46,204,113,0.15); color:var(--success); }
+        .status-overdue { background:rgba(240,71,112,0.15); color:var(--danger); }
+        .status-ongoing { background:rgba(91,156,245,0.12); color:var(--accent2); }
+
+        /* Right‑bottom link button */
+        .entry-link-btn {
+            position:absolute;
+            bottom:20px; right:20px;
+            width:36px; height:36px; border-radius:50%;
+            background:var(--surface2); border:1px solid var(--border);
+            color:var(--accent); font-size:1.1rem;
+            display:flex; align-items:center; justify-content:center;
+            cursor:pointer; transition:var(--transition);
+            text-decoration:none; z-index:2;
+        }
+        .entry-link-btn:hover { border-color:var(--accent); box-shadow:0 0 14px var(--accent-glow); }
+        .empty-state { text-align:center; padding:60px 20px; color:var(--text2); }
+        .fab { position:fixed; bottom:28px; right:28px; z-index:100; width:56px; height:56px; border-radius:50%; background:var(--surface2); border:1px solid var(--border); color:#fff; font-size:1.5rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:var(--transition); box-shadow:0 8px 24px rgba(0,0,0,0.5); backdrop-filter:blur(10px); }
+        .fab:hover { border-color:var(--accent); box-shadow:0 0 28px var(--accent-glow); transform:scale(1.06); }
+        .fab svg { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:2; }
+        .overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200; display:none; align-items:center; justify-content:center; backdrop-filter:blur(3px); }
+        .overlay.active { display:flex; }
+        .pin-modal { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:30px; text-align:center; width:90%; max-width:360px; }
+        .pin-input { width:100%; padding:14px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); color:#fff; font-size:1.3rem; text-align:center; letter-spacing:0.3em; font-family:var(--mono); outline:none; }
+        .btn { padding:10px 20px; border-radius:25px; border:1px solid var(--border); cursor:pointer; font-weight:600; font-size:0.9rem; transition:var(--transition); font-family:var(--font); }
+        .btn-primary { background:var(--accent); color:#000; border-color:var(--accent); }
+        .btn-primary:hover { box-shadow:0 0 24px var(--accent-glow); }
+        .btn-ghost { background:transparent; color:var(--text2); border-color:var(--border); }
+        .btn-ghost:hover { color:#fff; border-color:#555; }
+        .btn-danger { background:transparent; color:var(--danger); border-color:rgba(240,71,112,0.4); }
+        .btn-sm { padding:6px 14px; font-size:0.78rem; border-radius:20px; }
+        .settings-drawer { position:fixed; top:0; right:-100%; width:90%; max-width:520px; height:100vh; background:var(--surface); border-left:1px solid var(--border); z-index:300; transition:right 0.4s; display:flex; flex-direction:column; box-shadow:-10px 0 40px rgba(0,0,0,0.5); }
+        .settings-drawer.open { right:0; }
+        .drawer-header { padding:20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; }
+        .drawer-body { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:22px; }
+        .section-label { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); font-weight:700; }
+        .form-group { display:flex; flex-direction:column; gap:5px; }
+        .form-input, .form-textarea { width:100%; padding:12px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); color:#fff; font-family:var(--font); font-size:0.9rem; outline:none; resize:vertical; }
+        .form-textarea { min-height:60px; }
+        .micro-card { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:16px; display:flex; flex-direction:column; gap:10px; }
+        .micro-card.completed-card { border-color:rgba(46,204,113,0.3); opacity:0.85; }
+        .divider { border:none; border-top:1px solid var(--border); }
+        .drawer-footer { padding:16px 20px; border-top:1px solid var(--border); display:flex; gap:10px; flex-wrap:wrap; }
+        .btn-export { background:transparent; color:#fff; border:1px solid var(--accent); }
+        .btn-import { background:transparent; color:var(--accent2); border:1px solid var(--accent2); }
+        #importFileInput { display:none; }
+        .toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(120px); background:var(--surface2); border:1px solid var(--accent); color:#fff; padding:12px 24px; border-radius:30px; z-index:500; font-weight:600; font-size:0.85rem; transition:transform 0.35s; pointer-events:none; box-shadow:0 10px 30px rgba(0,0,0,0.5); }
+        .toast.show { transform:translateX(-50%) translateY(0); }
+        @media (max-width:600px) {
+            .timeline-line { left:20px; }
+            .timeline-entry { margin-left:36px; padding:14px 16px; }
+            .timeline-dot { left:-26px; top:22px; width:12px; height:12px; }
+            .fab { bottom:18px; right:18px; width:48px; height:48px; }
+            .entry-link-btn { width:30px; height:30px; font-size:0.9rem; bottom:14px; right:14px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+    <div class="app-container">
+        <div class="hero-section">
+            <div class="hero-badge">🎯 Main Goal</div>
+            <h1 class="hero-title" id="heroTitle">Set Your Goal</h1>
+            <p class="hero-subtitle" id="heroDesc">Go to settings to define your main goal and micro-targets.</p>
+            <div class="hero-countdown-wrap" id="heroCountdown"></div>
+            <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+            <p class="progress-label" id="progressLabel">0% complete</p>
+        </div>
+        <div class="timeline-wrapper">
+            <div class="timeline-line"></div>
+            <div class="timeline-entries" id="timelineEntries"></div>
+            <div class="empty-state" id="emptyState"><div class="icon">📍</div><h3>No micro-targets yet</h3><p>Click the gear icon to open Settings.</p></div>
+        </div>
+    </div>
+    <button class="fab" id="fabBtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+
+    <div class="overlay" id="pinOverlay">
+        <div class="pin-modal"><h3>🔒 Enter PIN</h3><p>4-digit PIN required</p>
+            <input type="password" class="pin-input" id="pinInput" maxlength="4" placeholder="••••"><p class="pin-error" id="pinError">Incorrect PIN</p>
+            <div class="pin-actions"><button class="btn btn-ghost" id="pinCancel">Cancel</button><button class="btn btn-primary" id="pinSubmit">Unlock</button></div>
+        </div>
+    </div>
+
+    <div class="settings-drawer" id="settingsDrawer">
+        <div class="drawer-header"><h3>⚙️ Settings</h3><button class="drawer-close" id="drawerClose">✕</button></div>
+        <div class="drawer-body">
+            <span class="section-label">🎯 Main Goal</span>
+            <div class="form-group"><label>Goal Title</label><input type="text" class="form-input" id="goalTitle" placeholder="e.g., Launch Startup"></div>
+            <div class="form-group"><label>Description</label><textarea class="form-textarea" id="goalDesc" rows="2" placeholder="Describe your goal"></textarea></div>
+            <div class="form-group"><label>Final Deadline</label><input type="datetime-local" class="form-input" id="goalDeadline"></div>
+            <hr class="divider">
+            <span class="section-label">📋 Micro Targets</span>
+            <div id="microTargetsList"></div>
+            <button class="btn btn-primary btn-sm" id="addMicroBtn">+ Add Micro Target</button>
+            <hr class="divider">
+            <span class="section-label">🔑 Security</span>
+            <div class="form-group"><label>Change PIN (4 digits)</label><input type="password" class="form-input" id="changePinInput" maxlength="4" placeholder="New PIN"></div>
+            <button class="btn btn-ghost btn-sm" id="savePinBtn">Update PIN</button>
+            <hr class="divider">
+            <span class="section-label">💾 Data Management</span>
+            <div style="display:flex;gap:12px;"><button class="btn btn-export btn-sm" id="exportBtn">📤 Export</button><button class="btn btn-import btn-sm" id="importBtn">📥 Import</button><input type="file" id="importFileInput" accept=".json"></div>
+        </div>
+        <div class="drawer-footer"><button class="btn btn-danger btn-sm" id="resetAllBtn">🗑 Reset All</button><span style="flex:1"></span><button class="btn btn-primary" id="saveCloseBtn">✓ Done</button></div>
+    </div>
+    <div class="toast" id="toast"></div>
+
+    <script>
+        (function() {
+            const heroTitle=document.getElementById('heroTitle'), heroDesc=document.getElementById('heroDesc'), heroCountdown=document.getElementById('heroCountdown'),
+                progressFill=document.getElementById('progressFill'), progressLabel=document.getElementById('progressLabel'),
+                timelineEntries=document.getElementById('timelineEntries'), emptyState=document.getElementById('emptyState'),
+                fabBtn=document.getElementById('fabBtn'), pinOverlay=document.getElementById('pinOverlay'), pinInput=document.getElementById('pinInput'),
+                pinError=document.getElementById('pinError'), pinCancel=document.getElementById('pinCancel'), pinSubmit=document.getElementById('pinSubmit'),
+                settingsDrawer=document.getElementById('settingsDrawer'), drawerClose=document.getElementById('drawerClose'),
+                goalTitleInput=document.getElementById('goalTitle'), goalDescInput=document.getElementById('goalDesc'), goalDeadlineInput=document.getElementById('goalDeadline'),
+                microTargetsList=document.getElementById('microTargetsList'), addMicroBtn=document.getElementById('addMicroBtn'),
+                changePinInput=document.getElementById('changePinInput'), savePinBtn=document.getElementById('savePinBtn'),
+                resetAllBtn=document.getElementById('resetAllBtn'), saveCloseBtn=document.getElementById('saveCloseBtn'),
+                toast=document.getElementById('toast'), particlesContainer=document.getElementById('particles'),
+                exportBtn=document.getElementById('exportBtn'), importBtn=document.getElementById('importBtn'), importFileInput=document.getElementById('importFileInput');
+
+            const DEFAULT_PIN='0000';
+            let isSettingsUnlocked=false, mainGoal={title:'',description:'',deadline:''}, microTargets=[], storedPin=DEFAULT_PIN, toastTimer, debounceTimer;
+
+            function loadData(){
+                try{
+                    const raw=localStorage.getItem('goalTimelineData');
+                    if(raw){const d=JSON.parse(raw); mainGoal=d.mainGoal||{title:'',description:'',deadline:''}; microTargets=d.microTargets||[]; storedPin=d.pin||DEFAULT_PIN;}
+                    else{mainGoal={title:'',description:'',deadline:''}; microTargets=[]; storedPin=DEFAULT_PIN;}
+                }catch(e){mainGoal={title:'',description:'',deadline:''}; microTargets=[]; storedPin=DEFAULT_PIN;}
+            }
+            function saveData(){localStorage.setItem('goalTimelineData',JSON.stringify({mainGoal,microTargets,pin:storedPin}));}
+            function showToast(m){clearTimeout(toastTimer);toast.textContent=m;toast.classList.add('show');toastTimer=setTimeout(()=>toast.classList.remove('show'),2200);}
+
+            function getCountdownData(iso){
+                if(!iso)return{expired:false,days:0,hours:0,minutes:0,seconds:0,totalMs:0};
+                const t=new Date(iso).getTime(); if(isNaN(t))return{expired:false,days:0,hours:0,minutes:0,seconds:0,totalMs:0};
+                const diff=t-Date.now();
+                if(diff<=0)return{expired:true,days:0,hours:0,minutes:0,seconds:0,totalMs:diff};
+                return{expired:false,days:Math.floor(diff/864e5),hours:Math.floor((diff%864e5)/36e5),minutes:Math.floor((diff%36e5)/6e4),seconds:Math.floor((diff%6e4)/1e3),totalMs:diff};
+            }
+            function renderHeroCountdown(){
+                if(!mainGoal.deadline){heroCountdown.innerHTML='';return;}
+                const cd=getCountdownData(mainGoal.deadline);
+                const b=[{num:cd.days,lbl:'Days'},{num:cd.hours,lbl:'Hours'},{num:cd.minutes,lbl:'Minutes'},{num:cd.seconds,lbl:'Seconds'}];
+                heroCountdown.innerHTML=b.map(b=>(`<div class="countdown-box ${(cd.expired||cd.totalMs<864e5)?'urgent':''}"><div class="num">${cd.expired?'--':String(b.num).padStart(2,'0')}</div><div class="lbl">${b.lbl}</div></div>`)).join('');
+                if(cd.expired)heroCountdown.innerHTML+='<div style="color:var(--danger);font-weight:700;">⚠ Deadline Reached</div>';
+            }
+            function renderProgress(){
+                const total=microTargets.length,completed=microTargets.filter(t=>t.completed).length,pct=total?Math.round(completed/total*100):0;
+                progressFill.style.width=pct+'%'; progressLabel.textContent=total?`${pct}% complete — ${completed} of ${total} steps done`:'Add micro-targets in Settings';
+            }
+
+            function escapeHTML(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+            function formatDate(iso){if(!iso)return'No deadline';const d=new Date(iso);return isNaN(d.getTime())?'Invalid':d.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});}
+            function formatLink(link){
+                if(!link)return '';
+                if(!/^https?:\/\//i.test(link)) return 'https://' + link;
+                return link;
+            }
+
+            function scrollToCurrentTarget(){
+                if(!microTargets.length)return;
+                const active=document.querySelector('.timeline-entry:not(.completed)');
+                if(active)active.scrollIntoView({behavior:'smooth',block:'center'});
+                else{const last=document.querySelector('.timeline-entry:last-child');if(last)last.scrollIntoView({behavior:'smooth',block:'center'});}
+            }
+
+            function renderTimeline(){
+                timelineEntries.innerHTML='';
+                if(!microTargets.length){emptyState.style.display='block';return;}
+                emptyState.style.display='none';
+                microTargets.forEach((mt,i)=>{
+                    const cd=getCountdownData(mt.deadline),isOverdue=cd.expired&&!mt.completed,classes=['timeline-entry'];
+                    if(mt.completed)classes.push('completed'); if(isOverdue)classes.push('overdue');
+                    let statusHTML = mt.completed
+                        ? '<span class="entry-status status-completed" data-toggle="1" title="Click to reopen">✓ Completed</span>'
+                        : (isOverdue ? '<span class="entry-status status-overdue" data-toggle="1" title="Click to mark complete">⚠ Overdue</span>' : '<span class="entry-status status-ongoing" data-toggle="1" title="Click to mark complete">● In Progress</span>');
+                    let countdownHTML = mt.completed ? '<div style="color:var(--success);font-weight:600;">🎉 Goal achieved!</div>'
+                        : (cd.expired ? '<div style="color:var(--danger);font-weight:600;">Deadline passed</div>'
+                        : `<div class="entry-countdown" data-deadline="${mt.deadline}" data-id="${mt.id}">
+                            <div class="mini-box"><div class="mini-num">${String(cd.days).padStart(2,'0')}</div><div class="mini-lbl">Days</div></div>
+                            <div class="mini-box"><div class="mini-num">${String(cd.hours).padStart(2,'0')}</div><div class="mini-lbl">Hrs</div></div>
+                            <div class="mini-box"><div class="mini-num">${String(cd.minutes).padStart(2,'0')}</div><div class="mini-lbl">Min</div></div>
+                            <div class="mini-box"><div class="mini-num">${String(cd.seconds).padStart(2,'0')}</div><div class="mini-lbl">Sec</div></div></div>`);
+                    const formattedLink = formatLink(mt.link);
+                    const linkButton = formattedLink ? `<a class="entry-link-btn" href="${escapeHTML(formattedLink)}" target="_blank" rel="noopener noreferrer" title="Open link">🔗</a>` : '';
+                    timelineEntries.innerHTML += `
+                        <div class="${classes.join(' ')}" data-id="${mt.id}">
+                            <div class="timeline-dot"></div>
+                            <div class="entry-header"><span class="entry-number">STEP ${i+1}</span><span class="entry-title">${escapeHTML(mt.title||'Untitled')}</span></div>
+                            ${mt.description?`<div class="entry-desc">${escapeHTML(mt.description)}</div>`:''}
+                            <div class="entry-deadline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${mt.deadline?formatDate(mt.deadline):'No deadline'}</div>
+                            ${countdownHTML}
+                            ${statusHTML}
+                            ${linkButton}
+                        </div>`;
+                });
+                attachTimelineToggleEvents();
+                scrollToCurrentTarget();
+            }
+
+            function attachTimelineToggleEvents(){
+                document.querySelectorAll('.entry-status[data-toggle]').forEach(el=>{
+                    el.removeEventListener('click',toggleComplete);
+                    el.addEventListener('click',toggleComplete);
+                });
+            }
+
+            function toggleComplete(e){
+                e.stopPropagation();
+                const entry=e.target.closest('.timeline-entry');
+                if(!entry)return;
+                const id=entry.dataset.id;
+                const mt=microTargets.find(t=>t.id===id);
+                if(!mt)return;
+                mt.completed=!mt.completed;
+                saveData();
+                fullRender();  // instant render for toggle
+                showToast(mt.completed?'✓ Marked as completed':'↩ Reopened');
+            }
+
+            function fullRender(){
+                heroTitle.textContent=mainGoal.title||'Set Your Goal';
+                heroDesc.textContent=mainGoal.description||(mainGoal.title?'Stay focused.':'Define your goal in settings.');
+                renderHeroCountdown();
+                renderTimeline();
+                renderProgress();
+            }
+
+            // Debounced fullRender for text inputs
+            function debouncedFullRender(){
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    fullRender();
+                }, 300);
+            }
+
+            function updateAllCountdowns(){
+                renderHeroCountdown();
+                document.querySelectorAll('.entry-countdown[data-deadline][data-id]').forEach(wrap=>{
+                    const deadline=wrap.dataset.deadline,id=wrap.dataset.id;
+                    const mt=microTargets.find(t=>t.id===id);
+                    if(!mt||mt.completed)return;
+                    const cd=getCountdownData(deadline);
+                    const entry=document.querySelector(`.timeline-entry[data-id="${id}"]`);
+                    if(!entry)return;
+                    const statusSpan=entry.querySelector('.entry-status');
+                    if(cd.expired){
+                        wrap.outerHTML='<div style="color:var(--danger);font-weight:600;">Deadline passed</div>';
+                        entry.classList.add('overdue');
+                        if(statusSpan){statusSpan.textContent='⚠ Overdue'; statusSpan.className='entry-status status-overdue';}
+                    }else{
+                        const nums=wrap.querySelectorAll('.mini-num');
+                        if(nums.length>=4){nums[0].textContent=String(cd.days).padStart(2,'0'); nums[1].textContent=String(cd.hours).padStart(2,'0'); nums[2].textContent=String(cd.minutes).padStart(2,'0'); nums[3].textContent=String(cd.seconds).padStart(2,'0');}
+                        entry.classList.remove('overdue');
+                        if(statusSpan&&!entry.classList.contains('completed')){statusSpan.textContent='● In Progress'; statusSpan.className='entry-status status-ongoing';}
+                    }
+                });
+            }
+
+            // Settings rendering with link field
+            function renderMicroTargetsInSettings(){
+                microTargetsList.innerHTML='';
+                microTargets.forEach((mt,i)=>{
+                    const card=document.createElement('div');
+                    card.className='micro-card'+(mt.completed?' completed-card':'');
+                    card.innerHTML=`
+                        <div style="display:flex;align-items:center;gap:8px;"><span style="font-weight:700;color:var(--accent);">#${i+1}</span>
+                            <input type="text" class="form-input" value="${escapeHTML(mt.title)}" data-action="title" data-id="${mt.id}" placeholder="Step title" style="flex:1;">
+                        </div>
+                        <textarea class="form-textarea" data-action="desc" data-id="${mt.id}" rows="2" placeholder="Short description...">${escapeHTML(mt.description||'')}</textarea>
+                        <div class="micro-card-row">
+                            <input type="datetime-local" class="form-input" value="${mt.deadline||''}" data-action="deadline" data-id="${mt.id}" style="flex:1;" placeholder="Deadline">
+                            <label class="toggle-wrap"><input type="checkbox" data-action="completed" data-id="${mt.id}" ${mt.completed?'checked':''}><span class="toggle-switch"></span><span>Done</span></label>
+                        </div>
+                        <div class="micro-card-row">
+                            <input type="text" class="form-input" value="${escapeHTML(mt.link||'')}" data-action="link" data-id="${mt.id}" placeholder="https://example.com (optional)" style="flex:1;">
+                        </div>
+                        <div class="micro-card-actions">
+                            <button class="btn btn-ghost btn-sm" data-action="up" data-id="${mt.id}" ${i===0?'disabled':''}>▲</button>
+                            <button class="btn btn-ghost btn-sm" data-action="down" data-id="${mt.id}" ${i===microTargets.length-1?'disabled':''}>▼</button>
+                            <button class="btn btn-danger btn-sm" data-action="delete" data-id="${mt.id}">🗑</button>
+                        </div>`;
+                    microTargetsList.appendChild(card);
+                });
+                attachMicroEvents();
+            }
+
+            function attachMicroEvents(){
+                microTargetsList.querySelectorAll('[data-action]').forEach(el=>{
+                    el.removeEventListener('change',handleMicroChange);
+                    el.removeEventListener('input',handleMicroChange);
+                    el.removeEventListener('click',handleMicroClick);
+                    el.addEventListener('change',handleMicroChange);
+                    el.addEventListener('input',handleMicroChange);
+                    el.addEventListener('click',handleMicroClick);
+                });
+            }
+
+            function handleMicroChange(e){
+                const action=e.target.dataset.action,id=e.target.dataset.id;
+                const mt=microTargets.find(t=>t.id===id); if(!mt)return;
+                if(action==='title')mt.title=e.target.value;
+                else if(action==='desc')mt.description=e.target.value;
+                else if(action==='deadline')mt.deadline=e.target.value;
+                else if(action==='link')mt.link=e.target.value;
+                else if(action==='completed')mt.completed=e.target.checked;
+                saveData();
+                // For completed toggle, instant full render + re-render settings list
+                if(action==='completed'){
+                    fullRender();
+                    renderMicroTargetsInSettings();
+                } else {
+                    // For text inputs, debounce the full render to avoid hanging
+                    debouncedFullRender();
+                }
+            }
+
+            function handleMicroClick(e){
+                const action=e.currentTarget.dataset.action,id=e.currentTarget.dataset.id;
+                if(!action||!id)return;
+                const index=microTargets.findIndex(t=>t.id===id);
+                if(action==='up'&&index>0){[microTargets[index-1],microTargets[index]]=[microTargets[index],microTargets[index-1]];saveData();fullRender();renderMicroTargetsInSettings();showToast('Order updated');}
+                else if(action==='down'&&index<microTargets.length-1){[microTargets[index],microTargets[index+1]]=[microTargets[index+1],microTargets[index]];saveData();fullRender();renderMicroTargetsInSettings();showToast('Order updated');}
+                else if(action==='delete'&&confirm('Delete this micro-target?')){microTargets.splice(index,1);saveData();fullRender();renderMicroTargetsInSettings();showToast('Deleted');}
+            }
+
+            function populateSettingsForm(){
+                goalTitleInput.value=mainGoal.title||''; goalDescInput.value=mainGoal.description||''; goalDeadlineInput.value=mainGoal.deadline||'';
+                changePinInput.value=''; renderMicroTargetsInSettings();
+            }
+
+            function openPinModal(){pinInput.value='';pinError.classList.remove('show');pinOverlay.classList.add('active');setTimeout(()=>pinInput.focus(),150);}
+            function closePinModal(){pinOverlay.classList.remove('active');}
+            function verifyPin(){if(pinInput.value.trim()===storedPin){isSettingsUnlocked=true;closePinModal();populateSettingsForm();settingsDrawer.classList.add('open');}else{pinError.classList.add('show');pinInput.value='';pinInput.focus();}}
+            function openSettings(){if(isSettingsUnlocked){populateSettingsForm();settingsDrawer.classList.add('open');}else openPinModal();}
+            function closeSettings(){settingsDrawer.classList.remove('open');saveSettingsFromForm();fullRender();}
+            function saveSettingsFromForm(){mainGoal.title=goalTitleInput.value.trim();mainGoal.description=goalDescInput.value.trim();mainGoal.deadline=goalDeadlineInput.value;saveData();fullRender();}
+
+            function exportAllData(){
+                const data={mainGoal,microTargets,pin:storedPin};
+                const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+                const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+                a.download=`goal-backup-${new Date().toISOString().slice(0,10)}.json`;
+                document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href);
+                showToast('Exported 📤');
+            }
+            function importData(file){
+                const reader=new FileReader();
+                reader.onload=e=>{
+                    try{
+                        const imported=JSON.parse(e.target.result);
+                        if(!imported.mainGoal||!Array.isArray(imported.microTargets)||typeof imported.pin!=='string')throw new Error();
+                        // fully replace all data
+                        mainGoal=imported.mainGoal;
+                        microTargets=imported.microTargets;
+                        storedPin=imported.pin||DEFAULT_PIN;
+                        saveData();
+                        fullRender();
+                        populateSettingsForm();
+                        showToast('Imported successfully 📥');
+                    }catch{showToast('❌ Invalid file');}
+                    importFileInput.value='';
+                };
+                reader.readAsText(file);
+            }
+
+            fabBtn.addEventListener('click',openSettings);
+            drawerClose.addEventListener('click',closeSettings);
+            saveCloseBtn.addEventListener('click',()=>{saveSettingsFromForm();closeSettings();showToast('Saved ✓');});
+            pinCancel.addEventListener('click',closePinModal); pinSubmit.addEventListener('click',verifyPin);
+            pinInput.addEventListener('keydown',e=>{if(e.key==='Enter')verifyPin();});
+            pinOverlay.addEventListener('click',e=>{if(e.target===pinOverlay)closePinModal();});
+            [goalTitleInput,goalDescInput,goalDeadlineInput].forEach(inp=>{inp.addEventListener('input',saveSettingsFromForm);inp.addEventListener('change',saveSettingsFromForm);});
+            addMicroBtn.addEventListener('click',()=>{
+                microTargets.push({id:'mt_'+Date.now(),title:'',description:'',deadline:'',completed:false,link:''});
+                saveData();fullRender();renderMicroTargetsInSettings();showToast('Added ✓');
+                microTargetsList.scrollIntoView({behavior:'smooth',block:'end'});
+            });
+            savePinBtn.addEventListener('click',()=>{
+                const pin=changePinInput.value.trim();
+                if(/^\d{4}$/.test(pin)){storedPin=pin;saveData();changePinInput.value='';showToast('PIN updated 🔑');}
+                else showToast('Enter exactly 4 digits');
+            });
+            resetAllBtn.addEventListener('click',()=>{
+                if(confirm('Reset ALL data? PIN becomes 0000.')){
+                    mainGoal={title:'',description:'',deadline:''};microTargets=[];storedPin=DEFAULT_PIN;
+                    saveData();fullRender();populateSettingsForm();showToast('Reset done');
+                }
+            });
+            exportBtn.addEventListener('click',exportAllData);
+            importBtn.addEventListener('click',()=>importFileInput.click());
+            importFileInput.addEventListener('change',()=>{if(importFileInput.files[0])importData(importFileInput.files[0]);});
+            document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(settingsDrawer.classList.contains('open'))closeSettings();if(pinOverlay.classList.contains('active'))closePinModal();}});
+
+            function createParticles(){for(let i=0;i<25;i++){const p=document.createElement('div');p.className='particle';const s=Math.random()*3+1.5;p.style.width=s+'px';p.style.height=s+'px';p.style.left=Math.random()*100+'%';p.style.animationDuration=(Math.random()*18+10)+'s';p.style.animationDelay=Math.random()*15+'s';p.style.opacity=Math.random()*0.5+0.15;particlesContainer.appendChild(p);}}
+
+            loadData();createParticles();fullRender();populateSettingsForm();
+            setInterval(updateAllCountdowns,1000);updateAllCountdowns();
+            console.log('✅ Performance fix applied: debounced rendering for text inputs.');
+        })();
+    </script>
+</body>
+</html>
