@@ -753,7 +753,8 @@
             updateDoc
         } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+//import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyDoZkKuglA__7f2RPEmZoi9bfc9Y_4x-dg",
@@ -770,6 +771,8 @@ import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https:/
         const db = getFirestore(app);
         const DOC_PATH = "timelines/main";
         const auth = getAuth();
+        // Force logout on page load so login screen is always shown
+signOut(auth).catch(() => {});
         const email = "bg@gmail.com";      // ← apna email (jo Firebase Auth me banaya tha)
 const password = "123456"; // ← apna password
 
