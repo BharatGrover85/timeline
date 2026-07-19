@@ -71,11 +71,21 @@
                 opacity: 0;
             }
         }
+        <!-- Login Screen -->
+<div id="loginScreen" style="position:fixed; inset:0; background:var(--bg); display:flex; align-items:center; justify-content:center; z-index:9999;">
+  <div style="background:var(--surface); padding:40px; border-radius:var(--radius); border:1px solid var(--border); width:90%; max-width:360px;">
+    <h2 style="text-align:center; margin-bottom:20px; color:#fff;">🔐 Login</h2>
+    <input type="email" id="loginEmail" class="form-input" placeholder="Email" style="margin-bottom:12px;" value="bg@gmail.com">
+    <input type="password" id="loginPassword" class="form-input" placeholder="Password" style="margin-bottom:12px;" value="123456">
+    <button id="loginBtn" class="btn btn-primary" style="width:100%;">Sign In</button>
+    <p id="loginError" style="color:var(--danger); margin-top:10px; display:none;">Invalid credentials</p>
+  </div>
+</div>
         .app-container {
             position: relative;
             z-index: 1;
             min-height: 100vh;
-            display: flex;
+    display: none;  /* initially hidden, login ke baad dikhega */
             flex-direction: column;
         }
         .hero-section {
@@ -1371,36 +1381,59 @@ const password = "123456"; // ← apna password
                 if (pinOverlay.classList.contains('active')) closePinModal();
             }
         });
+// ─── Init ─────────────────────────────────────────────────────────
 
-        // ─── Init ─────────────────────────────────────────────────────────
+createParticles();
 
-        createParticles();
+// ─── Login logic ──────────────────────────────────────────
+const loginScreen = document.getElementById('loginScreen');
+const loginEmail = document.getElementById('loginEmail');
+const loginPassword = document.getElementById('loginPassword');
+const loginBtn = document.getElementById('loginBtn');
+const loginError = document.getElementById('loginError');
 
-        // load from Firestore, fallback to localStorage
-        //await loadDataFromFirestore();
+// Hide login error initially
+loginError.style.display = 'none';
 
-        // setup real-time listener
-        //setupFirestoreListener();
-
-        // Wait for auth before touching Firestore
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    console.log("✅ Logged in as", user.uid);
-    loadDataFromFirestore();
-    setupFirestoreListener();
-  } else {
-    signInWithEmailAndPassword(auth, email, password)
-      .then(() => console.log("✅ Auto-login successful"))
-      .catch(err => console.error("Login error:", err));
+// Login button click
+loginBtn.addEventListener('click', async () => {
+  const email = loginEmail.value.trim();
+  const password = loginPassword.value.trim();
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    // success – UI change will happen in onAuthStateChanged
+  } catch (err) {
+    loginError.style.display = 'block';
+    loginError.textContent = '❌ ' + err.message;
   }
 });
 
-        
-        // start countdown ticker
-        setInterval(updateAllCountdowns, 1000);
-        updateAllCountdowns();
+// Enter key on password field
+loginPassword.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') loginBtn.click();
+});
 
-        console.log('✅ Firebase Firestore sync enabled. Data shared across devices.');
+// ─── Auth state listener (ONLY ONE) ──────────────────────────────────
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    // Logged in – show app, hide login
+    loginScreen.style.display = 'none';
+    document.querySelector('.app-container').style.display = 'block';
+    // Load data and start listener (only once)
+    loadDataFromFirestore();
+    setupFirestoreListener();
+  } else {
+    // Not logged in – show login, hide app
+    loginScreen.style.display = 'flex';
+    document.querySelector('.app-container').style.display = 'none';
+  }
+});
+
+// start countdown ticker
+setInterval(updateAllCountdowns, 1000);
+updateAllCountdowns();
+
+console.log('✅ Firebase Firestore sync enabled. Data shared across devices.');
     </script>
 </body>
 </html>
