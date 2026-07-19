@@ -773,8 +773,8 @@ import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from
         const auth = getAuth();
         // Force logout on page load so login screen is always shown
 signOut(auth).catch(() => {});
-        const email = "bg@gmail.com";      // ← apna email (jo Firebase Auth me banaya tha)
-const password = "123456"; // ← apna password
+//         const email = "bg@gmail.com";      // ← apna email (jo Firebase Auth me banaya tha)
+// const password = "123456"; // ← apna password
 
         // ─── DOM refs ─────────────────────────────────────────────────────
         const heroTitle = document.getElementById('heroTitle'),
